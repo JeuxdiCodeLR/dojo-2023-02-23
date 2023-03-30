@@ -1,4 +1,4 @@
-import {agedBrie, GildedRose, Item, passes, sulfurasHandOfRagnaros} from '@/gilded-rose';
+import {agedBrie, GildedRose, Item, passes, sulfurasHandOfRagnaros, ConjuredItem} from '@/gilded-rose';
 
 function getGildedRose(tableau ? : Item[]) {
   if (tableau)
@@ -159,9 +159,33 @@ describe('Gilded Rose', () => {
     expect(gildedRose.items[0].quality).toEqual(0);
   });
 
-  xit('conjured item voit qualité diminuer', () => {
+  it('conjured item voit qualité diminuer', () => {
     let tableau = [
-      new Item(passes, 1, 20),
+      new Item('Foo', 5, 10),
+      new ConjuredItem('Foo', 5, 10)
+    ];
+    const gildedRose = getGildedRose(tableau);
+
+    gildedRose.updateQuality();
+    expect(gildedRose.items[0].quality).toEqual(9);
+    expect(gildedRose.items[1].quality).toEqual(8);
+  });
+
+  it('conjured brie n augmente pas 2 fois plus vite' , () => {
+    let tableau = [
+      new Item(agedBrie, 5, 10),
+      new ConjuredItem(agedBrie, 5, 10)
+    ];
+    const gildedRose = getGildedRose(tableau);
+
+    gildedRose.updateQuality();
+    expect(gildedRose.items[0].quality).toEqual(11);
+    expect(gildedRose.items[1].quality).toEqual(11);
+  });
+
+  it('conjured passes n augmente pas 2 fois plus vite' , () => {
+    let tableau = [
+      new ConjuredItem(passes, 1, 20)
     ];
     const gildedRose = getGildedRose(tableau);
 
@@ -171,6 +195,4 @@ describe('Gilded Rose', () => {
     gildedRose.updateQuality();
     expect(gildedRose.items[0].quality).toEqual(0);
   });
-
-
 });

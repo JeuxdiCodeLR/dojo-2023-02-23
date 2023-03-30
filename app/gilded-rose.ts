@@ -10,10 +10,16 @@ export class Item {
   }
 }
 
+export class ConjuredItem extends Item{
+  constructor(name, sellIn, quality) {
+    super(name, sellIn, quality);
+  }
+}
+
 export abstract class UpdateQualityStrategy {
-  getNextQuality(sellin:number, quality:number): number {
-    if (quality===0) return 0;
-    if (sellin>0) return quality - 1;
+  getNextQuality(sellin: number, quality: number): number {
+    if (quality === 0) return 0;
+    if (sellin > 0) return quality - 1;
     return Math.max(quality - 2, 0);
   }
 }
@@ -21,6 +27,36 @@ export abstract class UpdateQualityStrategy {
 export const passes = 'Backstage passes to a TAFKAL80ETC concert';
 export const sulfurasHandOfRagnaros = "Sulfuras";
 export const agedBrie = 'Aged Brie';
+
+function diffQualityPasses(item: Item):number {
+  let diffQuality = 0;
+  if (item.sellIn > 10)
+    diffQuality = 1;
+  else if (item.sellIn > 5)
+    diffQuality = 2;
+  else if (item.sellIn > 0)
+    diffQuality = 3;
+  else diffQuality = -item.quality;
+  return diffQuality;
+}
+
+function diffQualityDefault(item: Item) {
+  if (item.sellIn > 0) {
+    return -1;
+  } else {
+    return -2;
+  }
+}
+function diffQualityAgedBrie(item:Item){
+  return 1;
+}
+
+type qualityFn = (Item) => number;
+
+const diffQualityMap:{[key: string]: qualityFn} = {
+ [agedBrie]: diffQualityAgedBrie,
+  [passes]: diffQualityPasses,
+}
 
 export class GildedRose {
   items: Array<Item>;
@@ -30,37 +66,20 @@ export class GildedRose {
   }
 
   updateQuality() {
-    const notSulfurasItems = this.items.filter(it => it.name!==sulfurasHandOfRagnaros);
-
+    const notSulfurasItems = this.items.filter(it => it.name !== sulfurasHandOfRagnaros);
 
     notSulfurasItems.forEach(item => {
-      let diff=0;
-        switch (item.name) {
-        case agedBrie :
-            item.quality = Math.min(item.quality +1, 50);
-          break;
+      let diffQuality = 0;
+      let multQuality = 1;
 
-        case passes :
-          if(item.sellIn > 10 )
-            item.quality = Math.min(item.quality +1, 50);
-          else if(item.sellIn > 5 )
-            item.quality = Math.min(item.quality +2, 50);
-          else if(item.sellIn > 0 )
-            item.quality = Math.min(item.quality +3, 50);
-          else item.quality = 0;
+      const diffQualityFn = diffQualityMap[item.name] ?? diffQualityDefault;
+      diffQuality = diffQualityFn(item);
 
-          break;
-
-        default:
-          if(item.sellIn>0) {
-            item.quality = Math.max(item.quality - 1, 0);
-          } else {
-            item.quality = Math.max(item.quality - 2, 0);
-          }
-          break;
+      if(diffQuality < 0 && item instanceof ConjuredItem) {
+        multQuality = 2;
       }
       item.sellIn = item.sellIn - 1;
-
+      item.quality = Math.max(0, Math.min(item.quality + diffQuality * multQuality, 50));
     });
 
     return this.items;
